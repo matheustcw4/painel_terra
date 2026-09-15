@@ -1,0 +1,8 @@
+# Copia pra usuarios.yaml (sem o .example). O hash abaixo é real, gerado com bcrypt
+# de verdade — senha de exemplo é "mudar123". Depois de copiar, roda
+# `python criar_usuario.py` pra trocar por usuários e senhas reais — não edita o hash
+# na mão.
+usuarios:
+  admin:
+    nome: Administrador
+    senha_hash: "$2b$12$0UqEjkCUr4fFU3pvkph1T.7k.GVn2e55WbVKD5BO3/RNQN7bhc9PW"

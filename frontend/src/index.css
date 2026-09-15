@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Paleta — âncorada na marca real (mcp_relatorios/docs/marca-terra.md), não */
+  /* inventada solta. Verde é o único acréscimo: motivado pelo domínio (agro),  */
+  /* usado só pra estado vivo/ativo, nunca decorativo.                          */
+  --color-terra-navy: #172944;
+  --color-terra-navy-hover: #3A4960;
+  --color-terra-navy-muted: #687485;
+  --color-terra-navy-tint: #DCDFE3;
+
+  --color-terra-canvas: #FAF9F6;
+  --color-terra-surface: #FFFFFF;
+  --color-terra-line: #E1E1E7;
+
+  --color-terra-ink: #1A1A1A;
+  --color-terra-ink-muted: #55606E;
+
+  --color-terra-sage: #3D7A5C;
+  --color-terra-sage-tint: #E8EFEB;
+  --color-terra-sage-dark: #2E5C45;
+
+  --color-terra-brick: #C0503D;
+  --color-terra-brick-tint: #FAECE8;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+body {
+  background: var(--color-terra-canvas);
+  color: var(--color-terra-ink);
+  font-family: var(--font-body);
+}
+
+@layer components {
+  .campo {
+    @apply w-full rounded-md border border-terra-line bg-white px-3 py-2 text-sm
+           text-terra-ink placeholder:text-terra-ink-muted/60
+           focus:outline-none focus:ring-2 focus:ring-terra-navy/20 focus:border-terra-navy;
+  }
+}
+
