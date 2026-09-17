@@ -8,7 +8,7 @@ from datetime import datetime
 
 from langchain_core.tools import tool
 from openpyxl import Workbook
-
+import re
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
@@ -17,6 +17,14 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 PASTA_ARQUIVOS = Path(__file__).parent / "arquivos_gerados"
 PASTA_ARQUIVOS.mkdir(exist_ok=True)
 
+def _nome_arquivo_seguro(titulo: str, extensao: str) -> str:
+    """Transforma um título livre (vem da LLM — pode ter barra, dois-pontos,
+    travessão, o que ela quiser escrever) num nome de arquivo seguro em
+    qualquer sistema operacional. Troca qualquer caractere que não seja
+    letra/número/espaço/hífen por nada, depois espaço por hífen."""
+    limpo = re.sub(r"[^\w\s-]", "", titulo, flags=re.UNICODE)
+    limpo = re.sub(r"\s+", "-", limpo.strip()).lower()
+    return f"{limpo}-{datetime.now().strftime('%Y%m%d%H%M%S')}.{extensao}"
 
 @tool
 def gerar_excel(titulo: str, colunas: list[str], linhas: list[list[str]]) -> str:
@@ -41,7 +49,7 @@ def gerar_excel(titulo: str, colunas: list[str], linhas: list[list[str]]) -> str
         maior = max([len(str(col))] + [len(str(l[i - 1])) for l in linhas if i - 1 < len(l)])
         ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = min(maior + 2, 40)
 
-    nome_arquivo = f"{titulo.lower().replace(' ', '-')}-{datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx"
+    nome_arquivo = _nome_arquivo_seguro(titulo, "xlsx")
     caminho = PASTA_ARQUIVOS / nome_arquivo
     wb.save(caminho)
 
@@ -59,7 +67,7 @@ def gerar_pdf(titulo: str, colunas: list[str], linhas: list[list[str]], resumo: 
     linhas: cada item é uma linha; valores na MESMA ordem das colunas, como texto
     resumo: parágrafo opcional de contexto, antes da tabela — pode deixar vazio
     """
-    nome_arquivo = f"{titulo.lower().replace(' ', '-')}-{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
+    nome_arquivo = _nome_arquivo_seguro(titulo, "pdf")
     caminho = PASTA_ARQUIVOS / nome_arquivo
 
     doc = SimpleDocTemplate(
