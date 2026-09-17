@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { MessageCircle, X, Send, Database } from "lucide-react";
 import { perguntarStreaming, status } from "../lib/api";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const NOMES_LEGIVEIS = {
   zeus: "Zeus · clima",
@@ -14,28 +16,6 @@ function nomeLegivel(nomeFerramenta) {
     (p) => nomeFerramenta === p || nomeFerramenta.startsWith(p + "_")
   );
   return prefixo ? NOMES_LEGIVEIS[prefixo] : nomeFerramenta;
-}
-
-function renderizarComLinks(texto) {
-  const partes = texto.split(/(\[[^\]]+\]\([^)]+\))/g);
-  return partes.map((parte, i) => {
-    const m = parte.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-    if (m) {
-      const [, rotulo, url] = m;
-      return (
-
-          key={i}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-terra-sage-dark underline hover:text-terra-sage-dark/80"
-        >
-          {rotulo}
-        </a>
-      );
-    }
-    return <span key={i}>{parte}</span>;
-  });
 }
 
 export default function ChatFlutuante() {
@@ -189,13 +169,29 @@ function Mensagem({ role, content, fontes = [], erro }) {
           ))}
         </div>
       )}
-      <div
-        className={`whitespace-pre-wrap text-sm leading-relaxed ${
-          erro ? "text-terra-brick" : "text-terra-ink"
-        }`}
-      >
-          {content ? renderizarComLinks(content) : <span className="text-terra-ink-muted">Pensando...</span>}
-        </div>
+      <div className={`text-sm leading-relaxed ${erro ? "text-terra-brick" : "text-terra-ink"}`}>
+        {content ? (
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              a: ({ ...props }) => (
+                <a {...props} target="_blank" rel="noopener noreferrer" className="text-terra-sage-dark underline" />
+              ),
+              table: ({ ...props }) => (
+                <div className="overflow-x-auto">
+                  <table {...props} className="my-2 border-collapse text-xs" />
+                </div>
+              ),
+              th: ({ ...props }) => <th {...props} className="border border-terra-line px-2 py-1 text-left font-medium" />,
+              td: ({ ...props }) => <td {...props} className="border border-terra-line px-2 py-1" />,
+            }}
+          >
+            {content}
+          </ReactMarkdown>
+        ) : (
+          <span className="text-terra-ink-muted">Pensando...</span>
+        )}
+      </div>
     </div>
   );
 }
