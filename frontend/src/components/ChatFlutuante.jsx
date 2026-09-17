@@ -16,6 +16,28 @@ function nomeLegivel(nomeFerramenta) {
   return prefixo ? NOMES_LEGIVEIS[prefixo] : nomeFerramenta;
 }
 
+function renderizarComLinks(texto) {
+  const partes = texto.split(/(\[[^\]]+\]\([^)]+\))/g);
+  return partes.map((parte, i) => {
+    const m = parte.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (m) {
+      const [, rotulo, url] = m;
+      return (
+
+          key={i}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-terra-sage-dark underline hover:text-terra-sage-dark/80"
+        >
+          {rotulo}
+        </a>
+      );
+    }
+    return <span key={i}>{parte}</span>;
+  });
+}
+
 export default function ChatFlutuante() {
   const [aberto, setAberto] = useState(false);
   const [mensagens, setMensagens] = useState([]);
@@ -172,8 +194,8 @@ function Mensagem({ role, content, fontes = [], erro }) {
           erro ? "text-terra-brick" : "text-terra-ink"
         }`}
       >
-        {content || <span className="text-terra-ink-muted">Pensando...</span>}
-      </div>
+          {content ? renderizarComLinks(content) : <span className="text-terra-ink-muted">Pensando...</span>}
+        </div>
     </div>
   );
 }
