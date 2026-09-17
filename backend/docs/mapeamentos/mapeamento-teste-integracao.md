@@ -106,9 +106,3 @@ Não há FK entre os dois schemas, mas existe uma chave de fato confiável: **`c
 Use essa chave para perguntas que cruzam horas lançadas (Clockify) com dados de contrato/cliente/base do técnico no ERP — por exemplo "quantas horas o técnico responsável pelo cliente X lançou este mês": junte `clockify.time_entries.email` com `erp.tecnicos_completo.email` (ou `erp.usuarios.email`) para chegar em `id_tecnico`, e a partir daí em `clientes.tecnico_id`.
 
 **Não** use `clockify.time_entries.tecnico` (nome em texto livre) nem `clockify.time_entries.cliente`/`.projeto` como chave de junção — normalização de nome é mais frágil que o e-mail, que já casa quase 1:1.
-
-## Fórmulas de cálculo
-Nenhum documento de fórmulas foi encontrado para esta base (diferente de `LKS_ZEUS_INT`, que tem `@docs/Instrucoes/inst_zeus.md`). Os campos `usa_vbc_*` e `forma_base_calculo`/`opcao_valor_constante` de `produtos` sugerem fortemente uma lógica de precificação configurável por produto, mas essa lógica **não está implementada nem documentada dentro do banco** — não tente reconstruir a fórmula de cobrança a partir dessas flags sem confirmação de quem mantém o ERP de origem.
-
-## Cruzamento com outras bases
-Não foi encontrada nenhuma chave técnica ou nome de fazenda/cliente em comum testado contra `LKS_ZEUS_INT` ou `LKS_PROTECTOR_DATABASE` — esse cruzamento não foi tentado nesta rodada de mapeamento. Se for necessário no futuro, seguir a mesma metodologia de normalização de nome usada no cruzamento Zeus↔Protector antes de assumir correspondência.

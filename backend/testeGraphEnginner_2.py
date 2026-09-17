@@ -11,6 +11,7 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import create_react_agent
 from typing import Annotated
 import operator
+from tools import gerar_excel, gerar_pdf
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -24,6 +25,7 @@ CANDIDATOS_RAIZ = [BACKEND, BACKEND.parents[1]]
 
 class State(TypedDict):
     pergunta: str
+    historico: list
     resposta: Annotated[list[str], operator.add]
 
 def _log(msg: str):
@@ -217,8 +219,19 @@ def _modelo_deepseek(nome: str):
     return ChatOpenAI(model=nome, api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
 
 MODELO = os.environ.get("PAINEL_MODELO", "deepseek-v4-flash")
-def ask(ask: str):
+def ask(ask: str, historico: list = None):
     modelo = _modelo_deepseek(MODELO)
+    contexto_txt = ""
+    if historico:
+        recentes = historico[-4:]
+        linhas_hist = "\n".join(f"{m['role']}: {m['content'][:200]}" for m in recentes)
+        contexto_txt = (
+            "\n\nCONTEXTO DA CONVERSA (mensagens recentes — use pra entender se a "
+            "pergunta atual é continuação de algo, tipo resposta a uma oferta de "
+            "PDF/Excel que você mesmo fez antes; nesse caso, roteie pro mesmo "
+            "agente do assunto anterior, não 'fora de contexto'):\n" + linhas_hist
+        )
+
     response = modelo.invoke([
     {"role": "system", "content": """# Seu papel é decidir qual(is) subagente(s) respondem cada pergunta, antes de
                                         qualquer consulta. Não responda a pergunta aqui — APENAS identifique o(s) agente(s).
@@ -241,7 +254,7 @@ def ask(ask: str):
                                         mesmo tempo), responda os nomes separados por vírgula, sem espaço — exemplo:
                                         Pecuario,Pluviometria
                                         
-                                        Responda SOMENTE com o(s) nome(s), nada mais — sem explicação."""},
+                                        Responda SOMENTE com o(s) nome(s), nada mais — sem explicação.""" + contexto_txt},
 
     {"role": "user", "content": ask}
     ])
@@ -249,7 +262,7 @@ def ask(ask: str):
 
 def orquestrator(state: State) -> str:
     question = state["pergunta"].lower()
-    response = ask(ask=question)
+    response = ask(question, state.get("historico"))
     response = response.content.lower()
 
     return response.strip().split(",")
@@ -257,7 +270,7 @@ def orquestrator(state: State) -> str:
 
 async def agentPluviom(state: State) -> dict:
     todas_tools, _ = await obter_ferramentas()
-    ferramentas = [t for t in todas_tools if t.name.startswith("zeus_")]
+    ferramentas = [t for t in todas_tools if t.name.startswith("zeus_")] + [gerar_excel] + [gerar_pdf]
     modelo = _modelo_deepseek(MODELO)
     agente_especialista = create_react_agent(modelo, ferramentas, prompt=SYSTEM_PROMPT)
     resultado = await agente_especialista.ainvoke({
@@ -267,29 +280,38 @@ async def agentPluviom(state: State) -> dict:
 
 async def agentClockfy(state: State) -> dict:
     todas_tools, _ = await obter_ferramentas()
-    ferramentas = [t for t in todas_tools if t.name.startswith("operacional_")]
+    ferramentas = [t for t in todas_tools if t.name.startswith("operacional_")] + [gerar_excel] + [gerar_pdf]
     modelo = _modelo_deepseek(MODELO)
     agente_especialista = create_react_agent(modelo, ferramentas, prompt=SYSTEM_PROMPT)
-    resultado = await agente_especialista.ainvoke({
-        "messages": [{"role": "user", "content": state["pergunta"]}]
-    })
+    mensagens = (state.get("historico") or []) + [{"role": "user", "content": state["pergunta"]}]
+    resultado = await agente_especialista.ainvoke({"messages": mensagens})
     return {"resposta": [resultado["messages"][-1].content]}
 
+async def agentOperacional(state: State) -> dict:
+    todas_tools, _ = await obter_ferramentas()
+    ferramentas = [t for t in todas_tools if t.name.startswith("operacional_")] + [gerar_excel] + [gerar_pdf]
+    modelo = _modelo_deepseek(MODELO)
+    agente_especialista = create_react_agent(modelo, ferramentas, prompt=SYSTEM_PROMPT)
+    mensagens = (state.get("historico") or []) + [{"role": "user", "content": state["pergunta"]}]
+    resultado = await agente_especialista.ainvoke({"messages": mensagens})
+    return {"resposta": [resultado["messages"][-1].content]}
 
 graph = StateGraph(State)
 
 graph.add_node("pluviometria", agentPluviom)
 graph.add_node("clockfy", agentClockfy)
-graph.set_conditional_entry_point(orquestrator, ["pluviometria", "clockfy"])
+graph.add_node("operacional", agentOperacional)
+graph.set_conditional_entry_point(orquestrator, ["pluviometria", "clockfy","operacional"])
 graph.add_edge("pluviometria", END)
 graph.add_edge("clockfy", END)
+graph.add_edge("operacional", END)
 agente = graph.compile()
 
 async def perguntar_streaming(mensagem: str, historico: list):
     _log(f"chat: nova pergunta = {mensagem[:70]!r}")
 
     try:
-        async for evento in agente.astream_events({"pergunta": mensagem}, version="v2"):
+        async for evento in agente.astream_events({"pergunta": mensagem, "historico": historico}, version="v2"):
             tipo = evento["event"]
             if tipo == "on_tool_start":
                 entrada = evento["data"].get("input", {})

@@ -26,6 +26,6 @@ Consulte @router.md para saber quais bases estão conectadas, o que cada uma cob
 
 ## Relatório em PDF
 
-Ao responder, se a resposta tiver uma tabela com dados ou ser uma resposta complexa com mais de 5 linhas, chame gerar_relatorio_pdf com o mesmo conteúdo que você já usou pra responder — título, resumo, a tabela se houver, e se a pergunta tinha caráter de comparação ou tendência, inclua o gráfico (tipo "barra" pra comparação entre categorias, "linha" pra série temporal). Sempre preencha fonte_dados citando a base de onde veio a informação.
+Ao responder, se a resposta tiver uma tabela com dados ou ser uma resposta complexa com mais de 5 linhas, pergunte no fim se o usuário quer isso em PDF ou Excel — se ele confirmar, use a ferramenta correspondente com os mesmos dados da resposta.
 
 Depois de gerar, abra o arquivo automaticamente pro usuário rodando: Start-Process "<caminho_arquivo>" -- não deixe só o caminho em texto, abra de verdade.

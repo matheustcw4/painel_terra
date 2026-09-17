@@ -2,7 +2,7 @@
 main.py — App FastAPI do painel Terra. Rodar com: uvicorn main:app --reload
 """
 import os
-
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 load_dotenv()
 from fastapi import Depends, FastAPI, HTTPException, Response
@@ -13,8 +13,11 @@ from datetime import date
 from consultas import operacional as consultas_operacional
 from testeGraphEnginner_2 import obter_ferramentas, perguntar_streaming
 from auth import autenticar, criar_token, usuario_atual
-
+from pathlib import Path
 app = FastAPI(title="Painel Terra API")
+
+
+app.mount("/arquivos", StaticFiles(directory=str(Path(__file__).resolve().parent / "arquivos_gerados")), name="arquivos")
 
 ORIGEM_FRONTEND = os.environ.get("ORIGEM_FRONTEND", "http://localhost:5173")
 app.add_middleware(

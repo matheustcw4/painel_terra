@@ -34,6 +34,8 @@ Sempre que responder algo vindo de uma dessas bases, deixe claro (mesmo que brev
 
 - Quantas horas foram apontadas em 2026? → operacional
 - Faça uma relação de horas apontadas por técnico e atividade → operacional
+- Quantos contratos ativos eu tenho no ano de 2026 ? -> operacional
+- Qual é o valor do Contrato do cliente "X" ? -> operacional
 - Quantos abates houveram na fazenda Serra Dourada neste ano? → dw_plan
 - Faça um comparativo do planejado x realizado de vendas da fazenda Matter → dw_plan
 - Quantos animais nasceram e morreram na fazenda Mahil? → dw_plan
